@@ -164,6 +164,4 @@ def stack_logcube(mode, region,
     hdumaps.close()
         
         
-        
-        
-#TODO ppxf_miles_fitting_lines(spectra, wave, z,)
+# TODO ppxf_miles_fitting_lines(spectra, wave, z,)
