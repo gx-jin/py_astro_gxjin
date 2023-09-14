@@ -18,6 +18,8 @@
 from uncertainties import unumpy
 # import sys
 import numpy as np
+from astropy.cosmology import FlatLambdaCDM
+
 
 ###############################################################################
 # Constant
@@ -27,7 +29,7 @@ c = 2.99792458e5  # speed of light, km/s
 ################################################################################
 
 
-def sfr_sfms(mass, z=0.0, imf='Chabrier'):
+def sfr_sfms(lgmstar, z=0.0, imf='Chabrier', cosmo=None):
     
     # TODO: description, Speagle et al. 2014
     
@@ -40,9 +42,11 @@ def sfr_sfms(mass, z=0.0, imf='Chabrier'):
     else:
         raise RuntimeError("Wrong IMF name! Use 'Chabrier', 'Kroupa', 'Salpeter'.")
 
-    # else:
-    #     raise RuntimeError("'fha', 'ld', and 'error' must have same shapes!.")
+    if cosmo is None:
+        cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+        
+    t = cosmo.age(z).value
     
-    sfr = unumpy.log10(ha_array * 4.0 * np.pi * np.power(ld, 2)) + convert
+    sfr = (0.84 - 0.026 * t) * lgmstar - 6.51 + 0.11 * t
     
     return unumpy.nominal_values(sfr), unumpy.std_devs(sfr)
