@@ -125,10 +125,11 @@ def stack_logcube(mode, region,
         bta = 1.0 - hdumaps[0].header['ECOOELL']
     except Exception:
         bta = 1.0
-        raise RuntimeWarning("No valid 'Re' measurement!")
+        print("Warning: No valid 'Re' measurement!")
 
-    rmax = rmax if rmax > 0 else np.nanmax(remap)
     arcmap = hdumaps['SPX_ELLCOO'].data[0, :, :]
+    mapmaxarc, mapmaxre = np.nanmax(arcmap), np.nanmax(remap)
+    rmax = rmax if rmax > 0 else np.max([mapmaxarc, mapmaxre])
     roundmap = np.sqrt((np.cos(pamap / 180.0 * np.pi) * arcmap)**2 + 
                        (np.sin(pamap / 180.0 * np.pi) * arcmap * bta)**2)
 
@@ -137,20 +138,21 @@ def stack_logcube(mode, region,
     elif region == 'cen':
         rcut = roundmap <= rfwhm
     elif (region == 'rering'):
-        if rmax < rfwhm:
-            raise RuntimeWarning("'rmax' is smaller than the resolution!")
+        if (rmax * mapmaxarc / mapmaxre) < rfwhm:
+            print("Warning: 'rmax' is smaller than the resolution!")
         rcut = (remap <= rmax) & (remap >= rmin)
     elif region == 'pasector':
-        if (pamin >= 0.) & (pamax <= 360.) & (pamax > pamin):
-            if rmax < rfwhm:
-                raise RuntimeWarning("'rmax' is smaller than the resolution! Return empty spectra.")            
-            rcut = (remap <= rmax) & (remap >= rmin) & (pamap >= pamin) & (pamap <= pamax) & (roundmap >= rfwhm)
+        if (pamax > pamin):
+            if (rmax * mapmaxarc / mapmaxre) < rfwhm:
+                print("Warning: 'rmax' is smaller than the resolution! Return empty spectra.")
+            pamap = pamap - pamin           
+            rcut = (remap <= rmax) & (remap >= rmin) & (roundmap >= rfwhm) & ((pamap >= 0) & (pamap <= (pamax - pamin)) | (pamap >= 180.0) & (pamap <= (pamax - pamin + 180.0)))
         else:
-            raise RuntimeWarning("Invalid 'pamin' or 'pamax'! Define them in clockwise direction.")
+            raise RuntimeError("Invalid 'pamin' or 'pamax'! Define them in clockwise direction.")
     
     nstack = np.sum(rcut)
     if nstack == 0:
-        raise RuntimeWarning("No spectra found in defined region! Return empty spectra.")
+        print("Warning: No spectra found in defined region! Return empty spectra.")
         return (wave, np.zeros_like(wave) - np.nan, np.zeros_like(wave) - np.nan, np.zeros_like(wave, dtype=int))
     else:
         flux[mask > 0] = np.nan
