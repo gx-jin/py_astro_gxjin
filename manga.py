@@ -20,6 +20,7 @@ import requests
 import shutil
 from astropy.io import fits
 import numpy as np
+import matplotlib.pyplot as plt
 
 ###############################################################################
 # Constant
@@ -28,6 +29,13 @@ c = 2.99792458e5  # speed of light, km/s
 
 ################################################################################
 
+
+def download_file(url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; \
+                rv:80.0) Gecko/20100101 Firefox/80.0'}
+    with requests.get(url, headers=headers, stream=True) as r:
+        return r.raw, requests.codes.ok
+                
 
 def download_logcube(plate, ifudesign, 
                      daptype='SPX', save_dir='./', quiet=True, ):
@@ -41,10 +49,7 @@ def download_logcube(plate, ifudesign,
         save_dir (str, optional): Directory for saving. Default = current path.
         quiet (bool, optional): Print result or not. Default is not.
     """
-     
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; \
-                rv:80.0) Gecko/20100101 Firefox/80.0'}
-            
+          
     if not os.path.exists(save_dir):
         raise RuntimeError("No such directory: " + str(save_dir))
     else:
@@ -53,10 +58,10 @@ def download_logcube(plate, ifudesign,
             if ~quiet:
                 print('File existed')
         logcube_url = f'https://data.sdss.org/sas/dr17/manga/spectro/analysis/v3_1_1/3.1.0/{daptype}-MILESHC-MASTARSSP/{plate}/{ifudesign}/manga-{plate}-{ifudesign}-LOGCUBE-{daptype}-MILESHC-MASTARSSP.fits.gz'
-        with requests.get(logcube_url, headers=headers, stream=True) as r:
-            if r.status_code == requests.codes.ok:
-                with open(save_loc, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
+        rfile, rcode = download_file(logcube_url)
+        if rcode == requests.codes.ok:
+            with open(save_loc, 'wb') as f:
+                shutil.copyfileobj(rfile, f)
         if ~quiet:
             print(f"File downloaded: {save_loc}")
 
@@ -163,7 +168,79 @@ def stack_logcube(mode, region,
         return wave, fluxstack, errstack, goodspec
     
     hducube.close()
-    hdumaps.close()
+    hdumaps.close()  
         
         
+def plot_manga_edge(ax, ifu, color='k', ls='--', lw=2, ):
+    asx1 = np.linspace(-17, -8.5, 10)
+    asx2 = np.linspace(-8.5, 8.5, 10)
+    asx3 = np.linspace(8.5, 17, 100)
+    asy1 = (asx1) * (3**0.5) + 29.44486
+    asy2 = (-3**0.5) * (asx1) - 29.44486
+    asy3 = (asx2) * 0 + 14.72243
+    asy4 = (asx2) * 0 - 14.72243
+    asy5 = (asx3) * (-3**0.5) + 29.44486
+    asy6 = (asx3) * (3**0.5) - 29.44486
+
+    bsx1 = np.linspace(-14.5, -7.25, 10)
+    bsx2 = np.linspace(-7.25, 7.25, 10)
+    bsx3 = np.linspace(7.25, 14.5, 10)
+    bsy1 = (bsx1) * (3**0.5) + 25.1147367
+    bsy2 = (-3**0.5) * (bsx1) - 25.1147367
+    bsy3 = (bsx2) * 0 + 12.557368
+    bsy4 = (bsx2) * 0 - 12.557368
+    bsy5 = (bsx3) * (-3**0.5) + 25.1147367
+    bsy6 = (bsx3) * (3**0.5) - 25.1147367
+
+    csx1 = np.linspace(-12, -6, 100)
+    csx2 = np.linspace(-6, 6, 100)
+    csx3 = np.linspace(6, 12, 100)
+    csy1 = (csx1) * (3**0.5) + 20.7846
+    csy2 = (-3**0.5) * (csx1) - 20.7846
+    csy3 = (csx2) * 0 + 10.3923
+    csy4 = (csx2) * 0 - 10.3923
+    csy5 = (csx3) * (-3**0.5) + 20.7846
+    csy6 = (csx3) * (3**0.5) - 20.7846
+
+    dsx1 = np.linspace(-9.5, -4.75, 100)
+    dsx2 = np.linspace(-4.75, 4.75, 100)
+    dsx3 = np.linspace(4.75, 9.5, 100)
+    dsy1 = (dsx1) * (3**0.5) + 16.45448
+    dsy2 = (-3**0.5) * (dsx1) - 16.45448
+    dsy3 = (dsx2) * 0 + 8.22724
+    dsy4 = (dsx2) * 0 - 8.22724
+    dsy5 = (dsx3) * (-3**0.5) + 16.45448
+    dsy6 = (dsx3) * (3**0.5) - 16.45448
+
+    esx1 = np.linspace(-7, -3.5, 100)
+    esx2 = np.linspace(-3.5, 3.5, 100)
+    esx3 = np.linspace(3.5, 7.0, 100)
+    esy1 = (esx1) * (3**0.5) + 12.12435565
+    esy2 = (-3**0.5) * (esx1) - 12.12435565
+    esy3 = (esx2) * 0 + 6.0622
+    esy4 = (esx2) * 0 - 6.0622
+    esy5 = (esx3) * (-3**0.5) + 12.12435565
+    esy6 = (esx3) * (3**0.5) - 12.12435565
+
+    frame127 = [asx1, asx2, asx3, asy1, asy2, asy3, asy4, asy5, asy6]
+    frame91 = [bsx1, bsx2, bsx3, bsy1, bsy2, bsy3, bsy4, bsy5, bsy6]
+    frame61 = [csx1, csx2, csx3, csy1, csy2, csy3, csy4, csy5, csy6]
+    frame37 = [dsx1, dsx2, dsx3, dsy1, dsy2, dsy3, dsy4, dsy5, dsy6]
+    frame19 = [esx1, esx2, esx3, esy1, esy2, esy3, esy4, esy5, esy6]
+    
+    if '127' in str(ifu):
+        frame = frame127
+    elif '91' in str(ifu):
+        frame = frame91
+    elif '61' in str(ifu):
+        frame = frame61
+    elif '37' in str(ifu):
+        frame = frame37
+    elif '19' in str(ifu):
+        frame = frame19
+    
+    for i in range(6):
+        ax.plot(frame[int(i / 2)], frame[i + 3], color=color, linestyle=ls, linewidth=lw)
+        
+
 # TODO ppxf_miles_fitting_lines(spectra, wave, z,)
