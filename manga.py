@@ -21,6 +21,8 @@ import shutil
 from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
+import urllib
+from PIL import Image
 
 ###############################################################################
 # Constant
@@ -30,11 +32,12 @@ c = 2.99792458e5  # speed of light, km/s
 ################################################################################
 
 
-def download_file(url):
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; \
-                rv:80.0) Gecko/20100101 Firefox/80.0'}
-    with requests.get(url, headers=headers, stream=True) as r:
-        return r.raw, requests.codes.ok
+# def download_file(url):
+#     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; \
+#                 rv:80.0) Gecko/20100101 Firefox/80.0'}
+#     with requests.get(url, headers=headers, stream=True) as r:
+#         return r
+#     r.close()
                 
 
 def download_logcube(plate, ifudesign, 
@@ -57,13 +60,16 @@ def download_logcube(plate, ifudesign,
         if os.path.exists(save_loc):
             if ~quiet:
                 print('File existed')
-        logcube_url = f'https://data.sdss.org/sas/dr17/manga/spectro/analysis/v3_1_1/3.1.0/{daptype}-MILESHC-MASTARSSP/{plate}/{ifudesign}/manga-{plate}-{ifudesign}-LOGCUBE-{daptype}-MILESHC-MASTARSSP.fits.gz'
-        rfile, rcode = download_file(logcube_url)
-        if rcode == requests.codes.ok:
-            with open(save_loc, 'wb') as f:
-                shutil.copyfileobj(rfile, f)
-        if ~quiet:
-            print(f"File downloaded: {save_loc}")
+        else:
+            logcube_url = f'https://data.sdss.org/sas/dr17/manga/spectro/analysis/v3_1_1/3.1.0/{daptype}-MILESHC-MASTARSSP/{plate}/{ifudesign}/manga-{plate}-{ifudesign}-LOGCUBE-{daptype}-MILESHC-MASTARSSP.fits.gz'
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; \
+                rv:80.0) Gecko/20100101 Firefox/80.0'}
+            with requests.get(logcube_url, headers=headers, stream=True) as r:
+                if r.status_code == requests.codes.ok:
+                    with open(save_loc, 'wb') as f:
+                        shutil.copyfileobj(r.raw, f)
+            if not quiet:
+                print(f"File downloaded: {save_loc}")
 
 
 def stack_logcube(mode, region,
@@ -106,12 +112,9 @@ def stack_logcube(mode, region,
                 hdumaps = fits.open(mapsfile.content)
             else:
                 raise RuntimeError('No MAPS file for ' + str(plate) + '-' + str(ifudesign)) 
-    elif mode == 'local':
-        try:    
-            hducube = fits.open(cubefile)
-            hdumaps = fits.open(mapsfile)
-        except Exception:
-            raise RuntimeError("Wrong filename!")
+    elif mode == 'local':  
+        hducube = fits.open(cubefile)
+        hdumaps = fits.open(mapsfile)
     else:
         raise RuntimeError("'mode' should be 'online' or 'local'!")
     try:  
@@ -169,8 +172,17 @@ def stack_logcube(mode, region,
     
     hducube.close()
     hdumaps.close()  
+
+
+def plot_gri_image(plate, ifudesign):
+    url = f'https://data.sdss.org/sas/dr17/manga/spectro/redux/v3_1_1/{plate}/images/{ifudesign}.png'
+    image = Image.open(urllib.request.urlopen(url))
+    plt.figure(figsize=(3, 3), layout='compressed', frameon=False)
+    plt.imshow(image)
+    plt.axis('off')
+    plt.show()
         
-        
+         
 def plot_manga_edge(ax, ifu, color='k', ls='--', lw=2, ):
     asx1 = np.linspace(-17, -8.5, 10)
     asx2 = np.linspace(-8.5, 8.5, 10)
