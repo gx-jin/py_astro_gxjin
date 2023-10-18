@@ -74,7 +74,7 @@ def download_logcube(plate, ifudesign,
 
 def stack_logcube(mode, region,
                   plate=None, ifudesign=None, cubefile=None, mapsfile=None,
-                  rmin=0., rmax=-1., pamin=0., pamax=360., re=None,):
+                  rmin=0., rmax=-1., pamin=0., pamax=360., recustom=-1.0,):
     """Stack DAP LOGCUBE spectra based on given morphology mode.
 
     Args:
@@ -88,7 +88,8 @@ def stack_logcube(mode, region,
         rmax (float, optional): For 'rering' or 'pasector' mode, the outer radius of the ring region. Will be changed to resolution if remax<fwhm. Defaults to -1.0.
         pamin (float, optional): For 'pasector' mode, the start PA in clockwise direction. Defaults to 0.0.
         pamax (float, optional): For 'pasector' mode, the end PA in clockwise direction. Defaults to 360.0.
-
+        recustom (float, optional): For 'rering' mode, the 1 unit radius in arcsec. Must be positive number.
+        
     Returns:
         turple with 4: observed wavelength, stacked spectra, 1 sigma error, number of spectra used for stacking along the wavelength
     """    
@@ -131,8 +132,12 @@ def stack_logcube(mode, region,
 
     try:
         bta = 1.0 - hdumaps[0].header['ECOOELL']
+        # redap = hdumaps[0].header['REFF']
+        padap = hdumaps[0].header['ECOOPA']
     except Exception:
         bta = 1.0
+        # redap = 1.0
+        padap = 0.0
         print("Warning: No valid 'Re' measurement!")
 
     arcmap = hdumaps['SPX_ELLCOO'].data[0, :, :]
@@ -144,16 +149,18 @@ def stack_logcube(mode, region,
     if region == 'all':
         rcut = remap >= 0
     elif region == 'cen':
-        rcut = roundmap <= rfwhm
+        rcut = roundmap <= 2.5  # rfwhm
     elif (region == 'rering'):
         if (rmax * mapmaxarc / mapmaxre) < rfwhm:
             print("Warning: 'rmax' is smaller than the resolution!")
+        if recustom > 0:
+            remap = arcmap / recustom
         rcut = (remap <= rmax) & (remap >= rmin)
     elif region == 'pasector':
         if (pamax > pamin):
             if (rmax * mapmaxarc / mapmaxre) < rfwhm:
                 print("Warning: 'rmax' is smaller than the resolution! Return empty spectra.")
-            pamap = pamap - pamin           
+            pamap = np.mod(pamap + padap, 360.0) - pamin        
             rcut = (remap <= rmax) & (remap >= rmin) & (roundmap >= rfwhm) & ((pamap >= 0) & (pamap <= (pamax - pamin)) | (pamap >= 180.0) & (pamap <= (pamax - pamin + 180.0)))
         else:
             raise RuntimeError("Invalid 'pamin' or 'pamax'! Define them in clockwise direction.")
