@@ -74,7 +74,7 @@ def download_logcube(plate, ifudesign,
 
 def stack_logcube(mode, region,
                   plate=None, ifudesign=None, cubefile=None, mapsfile=None,
-                  rmin=0., rmax=-1., pamin=0., pamax=360.):
+                  rmin=0., rmax=-1., pamin=0., pamax=360., re=None,):
     """Stack DAP LOGCUBE spectra based on given morphology mode.
 
     Args:
@@ -163,11 +163,11 @@ def stack_logcube(mode, region,
         print("Warning: No spectra found in defined region! Return empty spectra.")
         return (wave, np.zeros_like(wave) - np.nan, np.zeros_like(wave) - np.nan, np.zeros_like(wave, dtype=int))
     else:
-        flux[mask > 0] = np.nan
-        ivar[mask > 0] = np.nan
-        goodspec = np.nansum(~np.isnan(flux[:, rcut]), axis=1)
-        fluxstack = np.nansum(flux[:, rcut], axis=1)
-        errstack = np.sqrt(np.nansum(1. / ivar[:, rcut], axis=1)) 
+        flux[(mask > 0) & (wave >= 5570) & (wave <= 5586)] = np.nan  # mask 5578 skyline
+        ivar[(mask > 0) & (wave >= 5570) & (wave <= 5586)] = np.nan
+        goodspec = np.sum(~np.isnan(flux[:, rcut]), axis=1)
+        fluxstack = np.nanmean(flux[:, rcut], axis=1) * goodspec
+        errstack = np.sqrt(np.nanmean(1. / ivar[:, rcut], axis=1) * goodspec) 
         return wave, fluxstack, errstack, goodspec
     
     hducube.close()
