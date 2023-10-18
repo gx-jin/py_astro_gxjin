@@ -126,7 +126,7 @@ def stack_logcube(mode, region,
         remap = hdumaps['SPX_ELLCOO'].data[1, :, :]
         # kpcmap = hdumaps['SPX_ELLCOO'].data[2, :, :] / 0.7
         pamap = hdumaps['SPX_ELLCOO'].data[3, :, :]
-        rfwhm = hdumaps[0].header['RFWHM']
+        rfwhm = hdumaps[0].header['RFWHM'] / 2.0
     except Exception:
         raise RuntimeError("Not valid LOGCUBE or MAPS file!")
 
@@ -149,7 +149,7 @@ def stack_logcube(mode, region,
     if region == 'all':
         rcut = remap >= 0
     elif region == 'cen':
-        rcut = roundmap <= 2.5  # rfwhm
+        rcut = roundmap <= 1.5  # rfwhm
     elif (region == 'rering'):
         if (rmax * mapmaxarc / mapmaxre) < rfwhm:
             print("Warning: 'rmax' is smaller than the resolution!")
@@ -170,11 +170,14 @@ def stack_logcube(mode, region,
         print("Warning: No spectra found in defined region! Return empty spectra.")
         return (wave, np.zeros_like(wave) - np.nan, np.zeros_like(wave) - np.nan, np.zeros_like(wave, dtype=int))
     else:
-        flux[(mask > 0) & (wave >= 5570) & (wave <= 5586)] = np.nan  # mask 5578 skyline
-        ivar[(mask > 0) & (wave >= 5570) & (wave <= 5586)] = np.nan
+        flux[mask > 0] = np.nan  # mask 5578 skyline
+        ivar[mask > 0] = np.nan
         goodspec = np.sum(~np.isnan(flux[:, rcut]), axis=1)
+        goodspec[(wave >= 5570) & (wave <= 5586)] = 0
         fluxstack = np.nanmean(flux[:, rcut], axis=1) * goodspec
         errstack = np.sqrt(np.nanmean(1. / ivar[:, rcut], axis=1) * goodspec) 
+        fluxstack[(wave >= 5570) & (wave <= 5586)] = np.nan
+        errstack[(wave >= 5570) & (wave <= 5586)] = np.nan
         return wave, fluxstack, errstack, goodspec
     
     hducube.close()
