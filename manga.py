@@ -262,7 +262,7 @@ def plot_manga_edge(ax, ifu, color='k', ls='--', lw=2, ):
         frame = frame19
     
     for i in range(6):
-        ax.plot(frame[int(i / 2)], frame[i + 3], color=color, linestyle=ls, linewidth=lw)
-        
+        ax.plot(frame[int(i / 2)], frame[i + 3], color=color, linestyle=ls, linewidth=lw) 
+
 
 # TODO ppxf_miles_fitting_lines(spectra, wave, z,)
