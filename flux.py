@@ -31,6 +31,8 @@ def sfr_from_fha(fha, ld, error=None, imf='Chabrier'):
     
     # TODO: description
     
+    ld = np.float64(ld)
+    
     if imf == 'Chabrier':
         convert = - 41.27 + np.log10(0.63 / 0.67)
     elif imf == 'Kroupa':
