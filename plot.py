@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    Copyright (C) 2019-2023, Gaoxiang Jin
+    Copyright (C) 2019-2024, Gaoxiang Jin
 
     E-mail: gx-jin@outlook.com
 

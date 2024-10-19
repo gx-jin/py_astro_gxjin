@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+#! Unfinished
 """
-    Copyright (C) 2019-2023, Gaoxiang Jin
+    Copyright (C) 2019-2024, Gaoxiang Jin
 
     E-mail: gx-jin@outlook.com
 
@@ -30,7 +31,7 @@ c = 2.99792458e5  # speed of light, km/s
 
 
 def sfr_sfms(lgmstar, z=0.0, imf='Chabrier', cosmo=None):
-    
+    #! Unfinished
     # TODO: description, Speagle et al. 2014
     
     if imf == 'Chabrier':
